@@ -1,0 +1,57 @@
+const express = require('express');
+const router = express.Router();
+const Student = require('../models/Student');
+const requireAuth = require('../middleware/auth');
+
+// GET /students (Fetch all records - PROTECTED)
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /students (Create a new record)
+router.post('/', async (req, res) => {
+  try {
+    const newStudent = new Student(req.body);
+    const savedStudent = await newStudent.save();
+    res.status(201).json(savedStudent);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PUT /students/:id (Update an existing record)
+router.put('/:id', async (req, res) => {
+  try {
+    const updatedStudent = await Student.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!updatedStudent) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    res.json(updatedStudent);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE /students/:id (Remove a record - PROTECTED)
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const deletedStudent = await Student.findByIdAndDelete(req.params.id);
+    if (!deletedStudent) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+    res.json({ message: 'Student deleted successfully', deletedStudent });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
